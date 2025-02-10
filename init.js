@@ -1,7 +1,23 @@
 import EstimateGasPTENFT from "./libs/estimate-gas-ptenft.js"
 import EstimateGasPTE from "./libs/estimate-gas-pte.js"
 import PTE from "./libs/pte.js"
+import PTENFT from "./libs/ptenft.js"
 import readline from 'readline';
+
+const helpText = `
+### Estimate Commands
+- estimategas ptenft mintnft: gets the gas chance to consume in the mintNFT action from PTE NFT (Administrator Only)
+- estimategas pte rewardtokens: gets the gas chance to consume in the rewardTokens action from PTE Coin
+- estimategas pte cleanuprewardaddresses: gets the gas chance to consume in the cleanupRewardAddresses action from PTE Coin (Administrator Only)
+- estimategas pte burncoin: gets the gas chance to consume in the burnCoin action from PTE Coin
+
+### PTE Commands
+- pte rewardtokens auto: every pte_reward_per_seconds will call the reedemTokens function in the PTE Coin
+- pte rewardtokens: will call the reedemTokens function in the PTE Coin
+
+### PTENFT Commands
+- ptenft mint: generates a new NFT (Administrator Only)
+`;
 
 // Interface creation
 const rl = readline.createInterface({
@@ -10,7 +26,7 @@ const rl = readline.createInterface({
 });
 
 // Terminal welcome
-console.log("--PTE Manager 0.1--");
+console.log("--PTE Manager 1.0--");
 
 // Command proccess
 async function processInput(input) {
@@ -37,6 +53,14 @@ async function processInput(input) {
             break;
         case 'pte rewardtokens':
             PTE(false);
+            break;
+        // PTE NFT
+        case 'ptenft mint':
+            PTENFT();
+            break;
+        // Others
+        case 'help':
+            console.log(helpText);
             break;
         case 'exit':
             rl.close();

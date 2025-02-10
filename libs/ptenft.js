@@ -1,22 +1,20 @@
 import Web3 from "web3";
-import EstimateGasPTE from "./estimate-gas-pte.js"
+import EstimateGasPTENFT from "./estimate-gas-ptenft.js"
 import Configs from "./configs-loader.js";
 const configs = Configs();
 
-var intervalId;
-
-async function redeemTokens() {
+export default async function () {
     try {
         console.log("-------------");
-        console.log("[PTE] Checking gas...");
-        let estimatedGas = await EstimateGasPTE("rewardTokens");
+        console.log("[PTE NFT] Generating gas...");
+        let estimatedGas = await EstimateGasPTENFT("mintNFT");
         if (estimatedGas == -1) return;
 
-        console.log("[PTE] Estimated gas: " + estimatedGas + ", running rewardTokens action...");
+        console.log("[PTE NFT] Estimated gas: " + estimatedGas + ", running mintNFT action...");
 
         const web3 = new Web3(new Web3.providers.HttpProvider(configs["rpc_address"]));
-        const contractAddress = configs["pte_contract_address"];
-        const abi = configs["pte_contract_abi"];
+        const contractAddress = configs["pte_nft_contract_address"];
+        const abi = configs["pte_nft_contract_abi"];
         const contract = new web3.eth.Contract(abi, contractAddress);
 
         const senderAddress = configs["wallet_address"];
@@ -45,30 +43,14 @@ async function redeemTokens() {
             gas: estimatedGas,
             maxFeePerGas: maxFeePerGas,
             maxPriorityFeePerGas: maxPriorityFeePerGas,
-            data: contract.methods.rewardTokens().encodeABI()
+            data: contract.methods.mintNFT().encodeABI()
         };
 
         const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
         const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-        console.log("[PTE] Transaction Success: " + receipt.transactionHash);
+        console.log("[PTE NFT] Transaction Success: " + receipt.transactionHash);
     } catch (error) {
-        console.log("[PTE] ERROR: cannot make the transcation, reason: ");
+        console.log("[PTE NFT] ERROR: cannot make the transcation, reason: ");
         console.log(error);
-    }
-}
-
-export default async function (auto) {
-    if (auto) {
-        if (intervalId != undefined) {
-            clearInterval(intervalId);
-            intervalId = undefined;
-            console.log("[PTE] Disabled...");
-            return;
-        }
-
-        console.log("[PTE] Is running every: " + configs["pte_reward_per_seconds"] + " second");
-        intervalId = setInterval(() => redeemTokens(), parseInt(configs["pte_reward_per_seconds"]) * 1000);
-    } else {
-        redeemTokens();
     }
 }
