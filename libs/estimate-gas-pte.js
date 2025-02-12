@@ -28,6 +28,11 @@ export default async function (action, parameters) {
                     from: configs["wallet_address"]
                 });
                 break;
+            case "transfer":
+                gasEstimate = await contract.methods.transfer(parameters[0], parameters[1]).estimateGas({
+                    from: configs["wallet_address"]
+                });
+                break;
             default: return -1;
         }
 

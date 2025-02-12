@@ -15,3 +15,7 @@ wallet_private_key=123...
 # Base
 max_gas_per_transaction=30000000000
 additional_fee_gas_per_transaction=0
+
+# Distribute Tokens
+distribute_tokens_file_path=./example.json
+minimum_value_to_distribute=1000000000000000000

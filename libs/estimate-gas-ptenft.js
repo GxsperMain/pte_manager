@@ -1,7 +1,7 @@
 import Web3 from "web3";
 import Configs from "./configs-loader.js";
 
-export default async function (action) {
+export default async function (action, parameters) {
     const configs = Configs();
 
     const web3 = new Web3(new Web3.providers.HttpProvider(configs["rpc_address"]));
@@ -15,6 +15,11 @@ export default async function (action) {
         switch (action) {
             case "mintNFT":
                 gasEstimate = await contract.methods.mintNFT().estimateGas({
+                    from: configs["wallet_address"]
+                });
+                break;
+            case "burnNFT":
+                gasEstimate = await contract.methods.burnNFT(parameters[0]).estimateGas({
                     from: configs["wallet_address"]
                 });
                 break;

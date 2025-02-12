@@ -1,21 +1,21 @@
 import Web3 from "web3";
-import EstimateGasPTENFT from "./estimate-gas-ptenft.js"
+import EstimateGasPTE from "./estimate-gas-pte.js"
 import Configs from "./configs-loader.js";
 const configs = Configs();
 
-export default async function () {
+export default async function (amount) {
     try {
         console.log("-------------");
-        console.log("[PTE NFT] Generating gas...");
-        let estimatedGas = await EstimateGasPTENFT("mintNFT");
+        console.log("[PTE] Checking gas...");
+        let estimatedGas = await EstimateGasPTE("burnCoin", [amount]);
         if (estimatedGas == -1) return;
 
-        console.log("[PTE NFT] Estimated gas: " + estimatedGas + ", running mintNFT action...");
+        console.log("[PTE] Estimated gas: " + estimatedGas + ", running transfer action...");
 
         const web3 = new Web3(new Web3.providers.HttpProvider(configs["rpc_address"]));
-        const contractAddress = configs["pte_nft_contract_address"];
-        const abi = configs["pte_nft_contract_abi"];
-        const contract = new web3.eth.Contract(abi, contractAddress);
+        const contractAddress = configs["pte_contract_address"];
+        const abi = configs["pte_contract_abi"];
+        const contract = new web3.eth.Contract(abi, contractAddress)
 
         const senderAddress = configs["wallet_address"];
         const privateKey = configs["wallet_private_key"];
@@ -27,13 +27,13 @@ export default async function () {
         maxPriorityFeePerGas += parseInt(configs["additional_fee_gas_per_transaction"]);
         maxFeePerGas += parseInt(configs["additional_fee_gas_per_transaction"]);
 
-        console.log("[PTE NFT] Base Fee: " + baseFee);
-        console.log("[PTE NFT] Minimum: " + maxPriorityFeePerGas);
-        console.log("[PTE NFT] Max Gas: " + maxFeePerGas);
+        console.log("[PTE] Base Fee: " + baseFee);
+        console.log("[PTE] Minimum: " + maxPriorityFeePerGas);
+        console.log("[PTE] Max Gas: " + maxFeePerGas);
 
         if (maxFeePerGas > gasLimit) {
-            console.error("[PTE NFT] Canceling transaction, the gas limit has reached");
-            console.error("[PTE NFT] Limit: " + gasLimit + ", Total Estimated: " + maxFeePerGas);
+            console.error("[PTE] Canceling transaction, the gas limit has reached");
+            console.error("[PTE] Limit: " + gasLimit + ", Total Estimated: " + maxFeePerGas);
             return;
         }
 
@@ -43,14 +43,14 @@ export default async function () {
             gas: estimatedGas,
             maxFeePerGas: maxFeePerGas,
             maxPriorityFeePerGas: maxPriorityFeePerGas,
-            data: contract.methods.mintNFT().encodeABI()
+            data: contract.methods.burnCoin(amount).encodeABI()
         };
 
         const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
         const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-        console.log("[PTE NFT] Transaction Success: " + receipt.transactionHash);
+        console.log("[PTE] Transaction Success: " + receipt.transactionHash);
     } catch (error) {
-        console.log("[PTE NFT] ERROR: cannot make the transcation, reason: ");
-        console.log(error);
+        console.error("[PTE] ERROR: cannot make the transaction, reason: ");
+        console.error(error);
     }
 }

@@ -3,21 +3,19 @@ import EstimateGasPTE from "./estimate-gas-pte.js"
 import Configs from "./configs-loader.js";
 const configs = Configs();
 
-var intervalId;
-
-async function redeemTokens() {
+export default async function (address, amount) {
     try {
         console.log("-------------");
         console.log("[PTE] Checking gas...");
-        let estimatedGas = await EstimateGasPTE("rewardTokens");
+        let estimatedGas = await EstimateGasPTE("transfer", [address, amount]);
         if (estimatedGas == -1) return;
 
-        console.log("[PTE] Estimated gas: " + estimatedGas + ", running rewardTokens action...");
+        console.log("[PTE] Estimated gas: " + estimatedGas + ", running transfer action...");
 
         const web3 = new Web3(new Web3.providers.HttpProvider(configs["rpc_address"]));
         const contractAddress = configs["pte_contract_address"];
         const abi = configs["pte_contract_abi"];
-        const contract = new web3.eth.Contract(abi, contractAddress);
+        const contract = new web3.eth.Contract(abi, contractAddress)
 
         const senderAddress = configs["wallet_address"];
         const privateKey = configs["wallet_private_key"];
@@ -29,13 +27,13 @@ async function redeemTokens() {
         maxPriorityFeePerGas += parseInt(configs["additional_fee_gas_per_transaction"]);
         maxFeePerGas += parseInt(configs["additional_fee_gas_per_transaction"]);
 
-        console.log("[PTE NFT] Base Fee: " + baseFee);
-        console.log("[PTE NFT] Minimum: " + maxPriorityFeePerGas);
-        console.log("[PTE NFT] Max Gas: " + maxFeePerGas);
+        console.log("[PTE] Base Fee: " + baseFee);
+        console.log("[PTE] Minimum: " + maxPriorityFeePerGas);
+        console.log("[PTE] Max Gas: " + maxFeePerGas);
 
         if (maxFeePerGas > gasLimit) {
-            console.error("[PTE NFT] Canceling transaction, the gas limit has reached");
-            console.error("[PTE NFT] Limit: " + gasLimit + ", Total Estimated: " + maxFeePerGas);
+            console.error("[PTE] Canceling transaction, the gas limit has reached");
+            console.error("[PTE] Limit: " + gasLimit + ", Total Estimated: " + maxFeePerGas);
             return;
         }
 
@@ -45,30 +43,14 @@ async function redeemTokens() {
             gas: estimatedGas,
             maxFeePerGas: maxFeePerGas,
             maxPriorityFeePerGas: maxPriorityFeePerGas,
-            data: contract.methods.rewardTokens().encodeABI()
+            data: contract.methods.transfer(address, amount).encodeABI()
         };
 
         const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
         const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
         console.log("[PTE] Transaction Success: " + receipt.transactionHash);
     } catch (error) {
-        console.log("[PTE] ERROR: cannot make the transcation, reason: ");
-        console.log(error);
-    }
-}
-
-export default async function (auto) {
-    if (auto) {
-        if (intervalId != undefined) {
-            clearInterval(intervalId);
-            intervalId = undefined;
-            console.log("[PTE] Disabled...");
-            return;
-        }
-
-        console.log("[PTE] Is running every: " + configs["pte_reward_per_seconds"] + " second");
-        intervalId = setInterval(() => redeemTokens(), parseInt(configs["pte_reward_per_seconds"]) * 1000);
-    } else {
-        redeemTokens();
+        console.error("[PTE] ERROR: cannot make the transaction, reason: ");
+        console.error(error);
     }
 }

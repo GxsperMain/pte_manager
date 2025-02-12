@@ -4,6 +4,11 @@ A utility tool for managing play to earn token and nft
 To use this utility you need to install nodejs in your machine, after that clone this repository and open the terminal inside the repository.
 Type ``npm install`` to install the necessary dependencies, and use ``node init.js`` to start the utility, don't forget to check the ``configs.txt``
 
+For server owners you can use ``node distribute-tokens.js`` to automatically distribute PTE across wallets inside the ``example.json``
+> Executing this command will instantly start distributing, be careful
+
+The values inside the configs.txt are measured in wei so: ``1000000000000000000`` equals ``1`` PTE, or POL depending on the context
+
 ### Configurations
 - pte_nft_contract_address: the address for the PTENFT contract
 - pte_nft_contract_abi: you can get the abi in the PTENFT contract on polygon
@@ -15,16 +20,27 @@ Type ``npm install`` to install the necessary dependencies, and use ``node init.
 - wallet_private_key: your PRIVATE KEY from your wallet, used for transactions, very secret be careful and do not share
 - max_gas_per_transaction: the max gas limit for transactions
 - additional_fee_gas_per_transaction: additional gas per transaction for speed up the transactions
+- distribute_tokens_file_path: the actual path for the wallets values location, consider adding the full path in this config
+- minimum_value_to_distribute: minimum value to distribute the token
 
 ### Estimate Commands
 - estimategas ptenft mintnft: gets the gas chance to consume in the mintNFT action from PTE NFT (Administrator Only)
+- estimategas ptenft burnnft: gets the gas chance to consume in the burnNFT action from PTE NFT
 - estimategas pte rewardtokens: gets the gas chance to consume in the rewardTokens action from PTE Coin
 - estimategas pte cleanuprewardaddresses: gets the gas chance to consume in the cleanupRewardAddresses action from PTE Coin (Administrator Only)
 - estimategas pte burncoin: gets the gas chance to consume in the burnCoin action from PTE Coin
+- estimategas pte transfer: gets the gas chance to consume on transfering PTE Coins
 
 ### PTE Commands
 - pte rewardtokens auto: every ``pte_reward_per_seconds`` will call the reedemTokens function in the PTE Coin, type again to disable, or close the application
 - pte rewardtokens: will call the reedemTokens function in the PTE Coin
+- pte transfer: transfer a quantity of tokens to the desired address
+- pte burncoin: burns a selected amount of tokens
 
 ### PTENFT Commands
 - ptenft mint: generates a new NFT (Administrator Only)
+- ptenft burnnft: burns the token nft provided
+
+### Server Owners Commands
+- distribute: starts distributing the tokens to the loved players
+- > Executing this command will instantly start distributing, be careful 
