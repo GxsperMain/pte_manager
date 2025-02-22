@@ -1,6 +1,6 @@
 {
   "name": "pte_manager",
-  "version": "1.0",
+  "version": "1.2",
   "description": "A utility tool for managing play to earn token and nft",
   "type": "module",
   "scripts": {

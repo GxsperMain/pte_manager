@@ -41,7 +41,7 @@ const rl = readline.createInterface({
 });
 
 // Terminal welcome
-console.log("--PTE Manager 1.1--");
+console.log("--PTE Manager 1.2--");
 
 // Command proccess
 async function processInput(input) {
