@@ -43,4 +43,14 @@ The values inside the configs.txt are measured in wei so: ``1000000000000000000`
 
 ### Server Owners Commands
 - distribute: starts distributing the tokens to the loved players
-- > Executing this command will instantly start distributing, be careful 
+- > Executing this command will instantly start distributing, be careful
+
+# Scripts
+
+### Automatic Pay system
+Inside the scripts folders you can find the ``periodic-pay-json.sh``, this shellscript will automatically pay player every set up time
+- example: ``./periodic-pay-json.sh --sleepTime 86400 --lockPath /home/user/gameserver/wallets/wallet.lock --resyncPath /home/user/gameserver/wallets/wallet.resync --distributeScript /home/user/pte_manager/distribute-tokens-json.js``
+
+You can use the parameter ``--now`` for force pay after starting the script
+
+``configs.txt`` needs to be setup correctly
