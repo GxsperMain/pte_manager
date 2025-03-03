@@ -4,8 +4,9 @@ A utility tool for managing play to earn token and nft
 To use this utility you need to install nodejs in your machine, after that clone this repository and open the terminal inside the repository.
 Type ``npm install`` to install the necessary dependencies, and use ``node init.js`` to start the utility, don't forget to check the ``configs.txt``
 
-For server owners you can use ``node distribute-tokens.js`` to automatically distribute PTE across wallets inside the ``example.json``
-> Executing this command will instantly start distributing, be careful
+For server owners you can use ``node distribute-tokens-type.js`` to automatically distribute PTE across wallets
+- > Executing this command will instantly start distributing, be careful
+- > (distribute json) inside the ``example.json`` have any example on how the json should be.
 
 The values inside the configs.txt are measured in wei so: ``1000000000000000000`` equals ``1`` PTE, or POL depending on the context
 
