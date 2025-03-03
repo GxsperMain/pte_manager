@@ -30,8 +30,9 @@ const helpText = `
 - ptenft burnnft: burns the token nft provided
 
 ### Server Owners Commands
-- distribute: starts distributing the tokens to the loved players
-- > Executing this command will instantly start distributing, be careful  
+- distributejson: starts distributing the tokens to the loved players (json)
+- distributedb: starts distributing the tokens to the loved players (database)
+- > Executing this command will instantly start distributing, be careful
 `;
 
 // Interface creation
@@ -41,7 +42,7 @@ const rl = readline.createInterface({
 });
 
 // Terminal welcome
-console.log("--PTE Manager 1.2--");
+console.log("--PTE Manager 1.3--");
 
 // Command proccess
 async function processInput(input) {
@@ -101,10 +102,10 @@ async function processInput(input) {
             PTENFTMint();
             break;
         // Others
-        case 'distribute':
+        case 'distributejson': {
             const __filename = fileURLToPath(import.meta.url);
             const __dirname = dirname(__filename);
-            const distributePath = resolve(__dirname, "distribute-tokens.js");
+            const distributePath = resolve(__dirname, "distribute-tokens-json.js");
             exec(`node ${distributePath}`, (error, stdout, stderr) => {
                 if (error) {
                     console.error(error);
@@ -116,6 +117,24 @@ async function processInput(input) {
                 }
                 console.log(stdout);
             });
+        }
+            break;
+        case 'distributedb': {
+            const __filename = fileURLToPath(import.meta.url);
+            const __dirname = dirname(__filename);
+            const distributePath = resolve(__dirname, "distribute-tokens-db.js");
+            exec(`node ${distributePath}`, (error, stdout, stderr) => {
+                if (error) {
+                    console.error(error);
+                    return;
+                }
+                if (stderr) {
+                    console.error(stderr);
+                    return;
+                }
+                console.log(stdout);
+            });
+        }
             break;
         case 'help':
             console.log(helpText);

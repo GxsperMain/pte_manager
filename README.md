@@ -22,6 +22,11 @@ The values inside the configs.txt are measured in wei so: ``1000000000000000000`
 - additional_fee_gas_per_transaction: additional gas per transaction for speed up the transactions
 - distribute_tokens_file_path: the actual path for the wallets values location, consider adding the full path in this config
 - minimum_value_to_distribute: minimum value to distribute the token
+- distribute_tokens_database_ip: ip address for database
+- distribute_tokens_database_name: the database name (default pte_wallets)
+- distribute_tokens_database_username: username for database (default pte_admin)
+- distribute_tokens_database_password: user password for database (no default, please change it)
+- distribute_tokens_database_tables: created tables for distributing
 
 ### Estimate Commands
 - estimategas ptenft mintnft: gets the gas chance to consume in the mintNFT action from PTE NFT (Administrator Only)
@@ -42,7 +47,8 @@ The values inside the configs.txt are measured in wei so: ``1000000000000000000`
 - ptenft burnnft: burns the token nft provided
 
 ### Server Owners Commands
-- distribute: starts distributing the tokens to the loved players
+- distributejson: starts distributing the tokens to the loved players (json)
+- distributedb: starts distributing the tokens to the loved players (database)
 - > Executing this command will instantly start distributing, be careful
 
 # Scripts
