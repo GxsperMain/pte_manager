@@ -1,4 +1,4 @@
-import Web3 from "web3";
+import { ethers } from "ethers";
 import EstimateGasPTENFT from "./estimate-gas-ptenft.js"
 import Configs from "./configs-loader.js";
 const configs = Configs();
@@ -8,49 +8,55 @@ export default async function () {
         console.log("-------------");
         console.log("[PTE NFT] Generating gas...");
         let estimatedGas = await EstimateGasPTENFT("mintNFT");
-        if (estimatedGas == -1) return;
+        if (estimatedGas == -1) return false;
 
         console.log("[PTE NFT] Estimated gas: " + estimatedGas + ", running mintNFT action...");
 
-        const web3 = new Web3(new Web3.providers.HttpProvider(configs["rpc_address"]));
+        const provider = new ethers.JsonRpcProvider(configs["rpc_address"]);
         const contractAddress = configs["pte_nft_contract_address"];
         const abi = configs["pte_nft_contract_abi"];
-        const contract = new web3.eth.Contract(abi, contractAddress);
+        const wallet = new ethers.Wallet(configs["wallet_private_key"], provider);
+        const contract = new ethers.Contract(contractAddress, abi, wallet);
 
-        const senderAddress = configs["wallet_address"];
         const privateKey = configs["wallet_private_key"];
         const gasLimit = parseInt(configs["max_gas_per_transaction"]);
-        const baseFee = Number((await web3.eth.getBlock("pending")).baseFeePerGas);
-        let maxPriorityFeePerGas = Number(await web3.eth.getMaxPriorityFeePerGas());
+        const baseFee = Number((await provider.getBlock("pending")).baseFeePerGas);
+        let maxPriorityFeePerGas;
+        if (Number(configs["division_fee_gas_per_transaction"]) > 0) {
+            const feeDivision = Number(configs["division_fee_gas_per_transaction"]);
+            const maxGas = Number((await provider.getFeeData()).maxPriorityFeePerGas);
+
+            maxPriorityFeePerGas = maxGas / feeDivision;
+        }
+        else maxPriorityFeePerGas = Number((await provider.getFeeData()).maxPriorityFeePerGas);
         let maxFeePerGas = maxPriorityFeePerGas + baseFee - 1;
 
         maxPriorityFeePerGas += parseInt(configs["additional_fee_gas_per_transaction"]);
         maxFeePerGas += parseInt(configs["additional_fee_gas_per_transaction"]);
 
-        console.log("[PTE NFT] Base Fee: " + baseFee);
-        console.log("[PTE NFT] Minimum: " + maxPriorityFeePerGas);
-        console.log("[PTE NFT] Max Gas: " + maxFeePerGas);
+        console.log("[PTE] Base Fee: " + baseFee / 1e18);
+        console.log("[PTE] Minimum: " + maxPriorityFeePerGas / 1e18);
+        console.log("[PTE] Max Gas: " + maxFeePerGas / 1e18);
 
         if (maxFeePerGas > gasLimit) {
-            console.error("[PTE NFT] Canceling transaction, the gas limit has reached");
-            console.error("[PTE NFT] Limit: " + gasLimit + ", Total Estimated: " + maxFeePerGas);
-            return;
+            console.error("[PTE] Canceling transaction, the gas limit has reached");
+            console.error("[PTE] Limit: " + gasLimit + ", Total Estimated: " + maxFeePerGas);
+            return false;
         }
 
-        const tx = {
-            from: senderAddress,
-            to: contractAddress,
-            gas: estimatedGas,
-            maxFeePerGas: maxFeePerGas,
-            maxPriorityFeePerGas: maxPriorityFeePerGas,
-            data: contract.methods.mintNFT().encodeABI()
-        };
+        const tx = await contract.mintNFT.populateTransaction();
+        tx.gasLimit = estimatedGas;
+        tx.maxFeePerGas = maxFeePerGas;
+        tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
 
-        const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
-        const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-        console.log("[PTE NFT] Transaction Success: " + receipt.transactionHash);
+        const signer = new ethers.Wallet(privateKey, provider);
+        const txResponse = await signer.sendTransaction(tx);
+        const receipt = await txResponse.wait();
+        console.log("[PTE NFT] Transaction Success: " + receipt.hash);
+        return true;
     } catch (error) {
         console.log("[PTE NFT] ERROR: cannot make the transaction, reason: ");
         console.log(error);
+        return false;
     }
 }

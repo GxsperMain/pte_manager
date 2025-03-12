@@ -1,27 +1,24 @@
-import Web3 from "web3";
+import { ethers } from "ethers";
 import Configs from "./configs-loader.js";
 
 export default async function (action, parameters) {
     const configs = Configs();
 
-    const web3 = new Web3(new Web3.providers.HttpProvider(configs["rpc_address"]));
+    const provider = new ethers.JsonRpcProvider(configs["rpc_address"]);
 
     const contractAddress = configs["pte_nft_contract_address"];
     const abi = configs["pte_nft_contract_abi"];
-    const contract = new web3.eth.Contract(abi, contractAddress);
+    const wallet = new ethers.Wallet(configs["wallet_private_key"], provider);
+    const contract = new ethers.Contract(contractAddress, abi, wallet);
 
     try {
         let gasEstimate;
         switch (action) {
             case "mintNFT":
-                gasEstimate = await contract.methods.mintNFT().estimateGas({
-                    from: configs["wallet_address"]
-                });
+                gasEstimate = await contract.mintNFT.estimateGas();
                 break;
             case "burnNFT":
-                gasEstimate = await contract.methods.burnNFT(parameters[0]).estimateGas({
-                    from: configs["wallet_address"]
-                });
+                gasEstimate = await contract.burnNFT.estimateGas(parameters[0]);
                 break;
             default: return -1;
         }

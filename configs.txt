@@ -9,7 +9,6 @@ pte_reward_per_seconds=86400
 
 # Address
 rpc_address=https://polygon-rpc.com
-wallet_address=0x...
 wallet_private_key=123...
 
 # Base
@@ -25,4 +24,4 @@ distribute_tokens_database_ip=localhost
 distribute_tokens_database_name=pte_wallets
 distribute_tokens_database_username=pte_admin
 distribute_tokens_database_password=supersecretpassword
-distribute_tokens_database_tables=["tf2","vintagestory"]
+distribute_tokens_database_tables=["tf2","vintagestory","nmrih"]

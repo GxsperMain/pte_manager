@@ -3,16 +3,14 @@ import EstimateGasPTE from "./estimate-gas-pte.js"
 import Configs from "./configs-loader.js";
 const configs = Configs();
 
-var intervalId;
-
-async function redeemTokens() {
+export default async function (address, amount) {
     try {
         console.log("-------------");
         console.log("[PTE] Checking gas...");
-        let estimatedGas = await EstimateGasPTE("rewardTokens");
+        let estimatedGas = await EstimateGasPTE("approve", [address, amount]);
         if (estimatedGas == -1) return false;
 
-        console.log("[PTE] Estimated gas: " + estimatedGas + ", running rewardTokens action...");
+        console.log("[PTE] Estimated gas: " + estimatedGas + ", running approve action...");
 
         const provider = new ethers.JsonRpcProvider(configs["rpc_address"]);
         const contractAddress = configs["pte_contract_address"];
@@ -36,17 +34,17 @@ async function redeemTokens() {
         maxPriorityFeePerGas += parseInt(configs["additional_fee_gas_per_transaction"]);
         maxFeePerGas += parseInt(configs["additional_fee_gas_per_transaction"]);
 
-        console.log("[PTE] Base Fee: " + baseFee / 1e18);
-        console.log("[PTE] Minimum: " + maxPriorityFeePerGas / 1e18);
-        console.log("[PTE] Max Gas: " + maxFeePerGas / 1e18);
+        console.log("[PTES] Base Fee: " + baseFee / 1e18);
+        console.log("[PTES] Minimum: " + maxPriorityFeePerGas / 1e18);
+        console.log("[PTES] Max Gas: " + maxFeePerGas / 1e18);
 
         if (maxFeePerGas > gasLimit) {
-            console.error("[PTE] Canceling transaction, the gas limit has reached");
-            console.error("[PTE] Limit: " + gasLimit + ", Total Estimated: " + maxFeePerGas);
+            console.error("[PTES] Canceling transaction, the gas limit has reached");
+            console.error("[PTES] Limit: " + gasLimit + ", Total Estimated: " + maxFeePerGas);
             return false;
         }
 
-        const tx = await contract.rewardTokens.populateTransaction();
+        const tx = await contract.approve.populateTransaction(address, amount);
         tx.gasLimit = estimatedGas;
         tx.maxFeePerGas = maxFeePerGas;
         tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
@@ -60,21 +58,5 @@ async function redeemTokens() {
         console.error("[PTE] ERROR: cannot make the transaction, reason: ");
         console.error(error);
         return false;
-    }
-}
-
-export default async function (auto) {
-    if (auto) {
-        if (intervalId != undefined) {
-            clearInterval(intervalId);
-            intervalId = undefined;
-            console.log("[PTE] Disabled...");
-            return;
-        }
-
-        console.log("[PTE] Is running every: " + configs["pte_reward_per_seconds"] + " second");
-        intervalId = setInterval(() => redeemTokens(), parseInt(configs["pte_reward_per_seconds"]) * 1000);
-    } else {
-        redeemTokens();
     }
 }

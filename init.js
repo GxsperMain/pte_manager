@@ -3,6 +3,7 @@ import EstimateGasPTE from "./libs/estimate-gas-pte.js"
 import PTEBurncoin from "./libs/pte-burncoin.js"
 import PTETransfer from "./libs/pte-transfer.js"
 import PTEReward from "./libs/pte-rewardtokens.js"
+import PTEApprove from "./libs/pte-approve.js"
 import PTENFTBurn from "./libs/ptenft-burnnft.js"
 import PTENFTMint from "./libs/ptenft-mintnft.js"
 import readline from 'readline';
@@ -24,6 +25,7 @@ const helpText = `
 - pte rewardtokens: will call the reedemTokens function in the PTE Coin
 - pte transfer: transfer a quantity of tokens to the desired address
 - pte burncoin: burns a selected amount of tokens
+- pte approve: allow the provided address spend provided amount of PTE from your wallet
 
 ### PTENFT Commands
 - ptenft mint: generates a new NFT (Administrator Only)
@@ -42,7 +44,7 @@ const rl = readline.createInterface({
 });
 
 // Terminal welcome
-console.log("--PTE Manager 1.3--");
+console.log("--PTE Manager 1.4--");
 
 // Command proccess
 async function processInput(input) {
@@ -51,17 +53,22 @@ async function processInput(input) {
     // Complex Commands
     if (command.startsWith("pte transfer")) {
         const [, , address, amount] = command.split(" ");
-        PTETransfer(address, amount);
+        await PTETransfer(address, amount);
         askForInput();
         return;
     } else if (command.startsWith("pte burncoin")) {
         const [, , amount] = command.split(" ");
-        PTEBurncoin(amount);
+        await PTEBurncoin(amount);
+        askForInput();
+        return;
+    } else if (command.startsWith("pte approve")) {
+        const [, , address, amount] = command.split(" ");
+        await PTEApprove(address, amount);
         askForInput();
         return;
     } else if (command.startsWith("ptenft burnnft")) {
         const [, , token] = command.split(" ");
-        PTENFTBurn(token);
+        await PTENFTBurn(token);
         askForInput();
         return;
     } else if (command.startsWith("estimategas ptenft burnnft")) {
@@ -90,16 +97,19 @@ async function processInput(input) {
         case 'estimategas pte transfer':
             console.log("Gas: " + await EstimateGasPTE("transfer", ["0x0F7cc40aD5E2331770F49119c1B595EDD3266307", 100]));
             break;
+        case 'estimategas pte approve':
+            console.log("Gas: " + await EstimateGasPTE("approve", ["0x0F7cc40aD5E2331770F49119c1B595EDD3266307", 100]));
+            break;
         // PTE
         case 'pte rewardtokens auto':
-            PTEReward(true);
+            await PTEReward(true);
             break;
         case 'pte rewardtokens':
-            PTEReward(false);
+            await PTEReward(false);
             break;
         // PTE NFT
         case 'ptenft mint':
-            PTENFTMint();
+            await PTENFTMint();
             break;
         // Others
         case 'distributejson': {

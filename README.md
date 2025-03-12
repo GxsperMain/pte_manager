@@ -42,6 +42,7 @@ The values inside the configs.txt are measured in wei so: ``1000000000000000000`
 - pte rewardtokens: will call the reedemTokens function in the PTE Coin
 - pte transfer: transfer a quantity of tokens to the desired address
 - pte burncoin: burns a selected amount of tokens
+- pte approve: allow the provided address spend provided amount of PTE from your wallet
 
 ### PTENFT Commands
 - ptenft mint: generates a new NFT (Administrator Only)
@@ -57,6 +58,8 @@ The values inside the configs.txt are measured in wei so: ``1000000000000000000`
 ### Automatic Pay system
 Inside the scripts folders you can find the ``periodic-pay-json.sh``, this shellscript will automatically pay player every set up time
 - example: ``./periodic-pay-json.sh --sleepTime 86400 --lockPath /home/user/gameserver/wallets/wallet.lock --resyncPath /home/user/gameserver/wallets/wallet.resync --distributeScript /home/user/pte_manager/distribute-tokens-json.js``
+
+The same can be found for database in ``periodic-pay-db.sh``
 
 You can use the parameter ``--now`` for force pay after starting the script
 

@@ -1,13 +1,14 @@
-import Web3 from "web3";
+import { ethers } from "ethers";
 import Configs from "./libs/configs-loader.js";
 import EstimateGasPTE from "./libs/estimate-gas-pte.js"
 import MySQL from "mysql2";
 
 const configs = Configs();
-const web3 = new Web3(new Web3.providers.HttpProvider(configs["rpc_address"]));
+const provider = new ethers.JsonRpcProvider(configs["rpc_address"]);
 const contractAddress = configs["pte_contract_address"];
 const abi = configs["pte_contract_abi"];
-const contract = new web3.eth.Contract(abi, contractAddress);
+const wallet = new ethers.Wallet(configs["wallet_private_key"], provider);
+const contract = new ethers.Contract(contractAddress, abi, wallet);
 let requestsRunning = 0;
 let quantityToIterate = 0;
 let quantityFinished = -1;
@@ -48,7 +49,7 @@ connection.connect((err) => {
 });
 
 async function iterateDatabaseWithLimit(table, databaseLength) {
-    console.log("[DISTRIBUTION] " + databaseLength + " entries to pay");
+    console.log("[DISTRIBUTION] " + databaseLength + " entries in " + table);
     for (let i = 0; i < databaseLength; i++) {
         // Wait a while to check if the request is still running
         while (requestsRunning >= parseInt(configs["maximum_requests_per_queue"]))
@@ -62,6 +63,7 @@ async function iterateDatabaseWithLimit(table, databaseLength) {
             async (err, userData) => {
                 if (err) console.error('[DISTRIBUTION ERROR] Failed to get user data: ' + err.stack);
                 else if (userData.length == 0) console.log('[DISTRIBUTION ERROR] No register found for index: ' + i);
+                else if (userData[0]["walletaddress"] == null) console.log('[DISTRIBUTION] No wallet for index: ' + i);
                 else {
                     let success = await distributeToken(userData[0]["walletaddress"], userData[0]["value"]);
                     if (success) {
@@ -103,18 +105,17 @@ async function distributeToken(key, value) {
         };
         console.log("[DISTRIBUTION " + key + "] Estimated gas: " + estimatedGas + ", running transfer action...");
 
-        const senderAddress = configs["wallet_address"];
         const privateKey = configs["wallet_private_key"];
         const gasLimit = parseInt(configs["max_gas_per_transaction"]);
-        const baseFee = Number((await web3.eth.getBlock("pending")).baseFeePerGas);
+        const baseFee = Number((await provider.getBlock("pending")).baseFeePerGas);
         let maxPriorityFeePerGas;
         if (Number(configs["division_fee_gas_per_transaction"]) > 0) {
             const feeDivision = Number(configs["division_fee_gas_per_transaction"]);
-            const maxGas = Number(await web3.eth.getMaxPriorityFeePerGas());
+            const maxGas = Number((await provider.getFeeData()).maxPriorityFeePerGas);
 
             maxPriorityFeePerGas = maxGas / feeDivision;
         }
-        else maxPriorityFeePerGas = Number(await web3.eth.getMaxPriorityFeePerGas());
+        else maxPriorityFeePerGas = Number((await provider.getFeeData()).maxPriorityFeePerGas);
         let maxFeePerGas = maxPriorityFeePerGas + baseFee - 1;
 
         maxPriorityFeePerGas += parseInt(configs["additional_fee_gas_per_transaction"]);
@@ -130,18 +131,15 @@ async function distributeToken(key, value) {
             return false;
         }
 
-        const tx = {
-            from: senderAddress,
-            to: contractAddress,
-            gas: estimatedGas,
-            maxFeePerGas: maxFeePerGas,
-            maxPriorityFeePerGas: maxPriorityFeePerGas,
-            data: contract.methods.transfer(key, value).encodeABI()
-        };
+        const tx = await contract.transfer.populateTransaction(key, value);
+        tx.gasLimit = estimatedGas;
+        tx.maxFeePerGas = maxFeePerGas;
+        tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
 
-        const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
-        const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-        console.log("[DISTRIBUTION " + key + " SUCCESS] Transaction Success: " + receipt.transactionHash + ", for: " + key);
+        const signer = new ethers.Wallet(privateKey, provider);
+        const txResponse = await signer.sendTransaction(tx);
+        const receipt = await txResponse.wait();
+        console.log("[DISTRIBUTION " + key + " SUCCESS] Transaction Success: " + receipt.hash + ", for: " + key);
 
         return true;
     } catch (error) {

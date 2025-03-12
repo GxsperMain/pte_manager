@@ -1,4 +1,4 @@
-import Web3 from "web3";
+import { ethers } from "ethers";
 import EstimateGasPTE from "./estimate-gas-pte.js"
 import Configs from "./configs-loader.js";
 const configs = Configs();
@@ -8,49 +8,55 @@ export default async function (address, amount) {
         console.log("-------------");
         console.log("[PTE] Checking gas...");
         let estimatedGas = await EstimateGasPTE("transfer", [address, amount]);
-        if (estimatedGas == -1) return;
+        if (estimatedGas == -1) return false;
 
         console.log("[PTE] Estimated gas: " + estimatedGas + ", running transfer action...");
 
-        const web3 = new Web3(new Web3.providers.HttpProvider(configs["rpc_address"]));
+        const provider = new ethers.JsonRpcProvider(configs["rpc_address"]);
         const contractAddress = configs["pte_contract_address"];
         const abi = configs["pte_contract_abi"];
-        const contract = new web3.eth.Contract(abi, contractAddress)
+        const wallet = new ethers.Wallet(configs["wallet_private_key"], provider);
+        const contract = new ethers.Contract(contractAddress, abi, wallet);
 
-        const senderAddress = configs["wallet_address"];
         const privateKey = configs["wallet_private_key"];
         const gasLimit = parseInt(configs["max_gas_per_transaction"]);
-        const baseFee = Number((await web3.eth.getBlock("pending")).baseFeePerGas);
-        let maxPriorityFeePerGas = Number(await web3.eth.getMaxPriorityFeePerGas());
+        const baseFee = Number((await provider.getBlock("pending")).baseFeePerGas);
+        let maxPriorityFeePerGas;
+        if (Number(configs["division_fee_gas_per_transaction"]) > 0) {
+            const feeDivision = Number(configs["division_fee_gas_per_transaction"]);
+            const maxGas = Number((await provider.getFeeData()).maxPriorityFeePerGas);
+
+            maxPriorityFeePerGas = maxGas / feeDivision;
+        }
+        else maxPriorityFeePerGas = Number((await provider.getFeeData()).maxPriorityFeePerGas);
         let maxFeePerGas = maxPriorityFeePerGas + baseFee - 1;
 
         maxPriorityFeePerGas += parseInt(configs["additional_fee_gas_per_transaction"]);
         maxFeePerGas += parseInt(configs["additional_fee_gas_per_transaction"]);
 
-        console.log("[PTE] Base Fee: " + baseFee);
-        console.log("[PTE] Minimum: " + maxPriorityFeePerGas);
-        console.log("[PTE] Max Gas: " + maxFeePerGas);
+        console.log("[PTE] Base Fee: " + baseFee / 1e18);
+        console.log("[PTE] Minimum: " + maxPriorityFeePerGas / 1e18);
+        console.log("[PTE] Max Gas: " + maxFeePerGas / 1e18);
 
         if (maxFeePerGas > gasLimit) {
             console.error("[PTE] Canceling transaction, the gas limit has reached");
             console.error("[PTE] Limit: " + gasLimit + ", Total Estimated: " + maxFeePerGas);
-            return;
+            return false;
         }
 
-        const tx = {
-            from: senderAddress,
-            to: contractAddress,
-            gas: estimatedGas,
-            maxFeePerGas: maxFeePerGas,
-            maxPriorityFeePerGas: maxPriorityFeePerGas,
-            data: contract.methods.transfer(address, amount).encodeABI()
-        };
+        const tx = await contract.transfer.populateTransaction(address, amount);
+        tx.gasLimit = estimatedGas;
+        tx.maxFeePerGas = maxFeePerGas;
+        tx.maxPriorityFeePerGas = maxPriorityFeePerGas;
 
-        const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
-        const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-        console.log("[PTE] Transaction Success: " + receipt.transactionHash);
+        const signer = new ethers.Wallet(privateKey, provider);
+        const txResponse = await signer.sendTransaction(tx);
+        const receipt = await txResponse.wait();
+        console.log("[PTE] Transaction Success: " + receipt.hash);
+        return true;
     } catch (error) {
         console.error("[PTE] ERROR: cannot make the transaction, reason: ");
         console.error(error);
+        return false;
     }
 }

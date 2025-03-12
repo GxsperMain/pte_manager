@@ -1,37 +1,33 @@
-import Web3 from "web3";
+import { ethers } from "ethers";
 import Configs from "./configs-loader.js";
 
 export default async function (action, parameters) {
     const configs = Configs();
 
-    const web3 = new Web3(new Web3.providers.HttpProvider(configs["rpc_address"]));
+    const provider = new ethers.JsonRpcProvider(configs["rpc_address"]);
 
     const contractAddress = configs["pte_contract_address"];
     const abi = configs["pte_contract_abi"];
-    const contract = new web3.eth.Contract(abi, contractAddress);
+    const wallet = new ethers.Wallet(configs["wallet_private_key"], provider);
+    const contract = new ethers.Contract(contractAddress, abi, wallet);
 
     try {
         let gasEstimate;
         switch (action) {
             case "rewardTokens":
-                gasEstimate = await contract.methods.rewardTokens().estimateGas({
-                    from: configs["wallet_address"]
-                });
+                gasEstimate = await contract.rewardTokens.estimateGas();
                 break;
             case "cleanupRewardAddresses":
-                gasEstimate = await contract.methods.cleanupRewardAddresses().estimateGas({
-                    from: configs["wallet_address"]
-                });
+                gasEstimate = await contract.cleanupRewardAddresses.estimateGas();
                 break;
             case "burnCoin":
-                gasEstimate = await contract.methods.burnCoin(parameters[0]).estimateGas({
-                    from: configs["wallet_address"]
-                });
+                gasEstimate = await contract.burnCoin.estimateGas(parameters[0]);
                 break;
             case "transfer":
-                gasEstimate = await contract.methods.transfer(parameters[0], parameters[1]).estimateGas({
-                    from: configs["wallet_address"]
-                });
+                gasEstimate = await contract.transfer.estimateGas(parameters[0], parameters[1]);
+                break;
+            case "approve":
+                gasEstimate = await contract.approve.estimateGas(parameters[0], parameters[1]);
                 break;
             default: return -1;
         }
